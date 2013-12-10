@@ -13,6 +13,7 @@ namespace EloCounter
 
         int printedPages;
         int printedLines;
+        int linesOnCurrentPage;
         bool printInOneRow = false;
         int linesToPrint;
 
@@ -95,27 +96,31 @@ namespace EloCounter
 
         private void doc_PrintPage(object sender, PrintPageEventArgs e)
         {
-            float linesPerPage = 0;
+            linesOnCurrentPage = 0;
+            double linesPerPage = 0;
             if (printedPages == 0)
             {
                 DrawHeader(e);
-                linesPerPage = (e.MarginBounds.Height - headerHeight - pageSettings.HeaderMargin) 
-                                / printFont.GetHeight(e.Graphics);
+                linesPerPage = Math.Floor((e.MarginBounds.Height - headerHeight - pageSettings.HeaderMargin) 
+                                / printFont.GetHeight(e.Graphics));
             }
             else
             {
-                linesPerPage = e.MarginBounds.Height / printFont.GetHeight(e.Graphics);
+                linesPerPage = Math.Floor(e.MarginBounds.Height / printFont.GetHeight(e.Graphics));
             }
 
-            while (printedLines < linesPerPage && printedLines < linesToPrint)
+            
+            while (linesOnCurrentPage < linesPerPage && printedLines < linesToPrint)
             {
                 DrawNextLine(e);
                 ++printedLines;
+                ++linesOnCurrentPage;
             }
 
             if (printedLines != linesToPrint)
             {
                 e.HasMorePages = true;
+                ++printedPages;
             }
             else
             {
@@ -131,7 +136,7 @@ namespace EloCounter
             if (printedPages == 0) topMargin += headerHeight + pageSettings.HeaderMargin;
             float lineHeight = printFont.GetHeight(e.Graphics);
             float rightPos = e.MarginBounds.Right - nameBoxWidth;
-            float yPos = topMargin + (printedLines * lineHeight);
+            float yPos = topMargin + (linesOnCurrentPage * lineHeight);
 
             Player pl = players[printedLines];
             Player pr = (printedLines + linesToPrint < players.Count) ? players[printedLines + linesToPrint] : null;
@@ -143,7 +148,7 @@ namespace EloCounter
             RectangleF numberRec = new RectangleF(leftMargin, yPos, 0, lineHeight);
             e.Graphics.DrawString(indexLeft.ToString(), printFont, Brushes.Black, numberRec);
 
-            RectangleF playerRec = new RectangleF(leftMargin + nameBoxWidth * 0.1f, yPos, 0, lineHeight);
+            RectangleF playerRec = new RectangleF(leftMargin + nameBoxWidth * 0.13f, yPos, 0, lineHeight);
             e.Graphics.DrawString(pl.Name, printFont, Brushes.Black, playerRec);
 
             RectangleF rateRec = new RectangleF(leftMargin + nameBoxWidth * 0.75f, yPos, 0, lineHeight);
@@ -155,7 +160,7 @@ namespace EloCounter
                 numberRec = new RectangleF(rightPos, yPos, 0, lineHeight);
                 e.Graphics.DrawString(indexRight.ToString(), printFont, Brushes.Black, numberRec);
 
-                playerRec = new RectangleF(rightPos + nameBoxWidth * 0.1f, yPos, 0, lineHeight);
+                playerRec = new RectangleF(rightPos + nameBoxWidth * 0.13f, yPos, 0, lineHeight);
                 e.Graphics.DrawString(pr.Name, printFont, Brushes.Black, playerRec);
 
                 rateRec = new RectangleF(rightPos + nameBoxWidth * 0.75f, yPos, 0, lineHeight);
@@ -195,6 +200,7 @@ namespace EloCounter
             printedPages = 0;
             printedLines = 0;
             headerHeight = 0;
+            linesOnCurrentPage = 0;
         }
     }
 }
